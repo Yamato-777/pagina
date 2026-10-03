@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tu sorpresa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{--wall:#141a16;--wall2:#090c0a;--cream:#cfc9a8;--orange:#7d4a2a;--gold:#a8944a;--ink:#050706;--paper:#b4ae97}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:var(--ink);color:var(--cream);font-family:'Press Start 2P',monospace;overflow:hidden}
+
+/* ---------- base de cada pantalla ---------- */
+.page{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:2.2vh;padding:4vh 5vw 26vh;text-align:center;
+ background:radial-gradient(ellipse at 50% 35%,#1d2620,var(--wall2) 72%);filter:saturate(.6) contrast(1.12)}
+.page.on{display:flex;animation:in .5s ease,flick 6s 1s infinite}
+.page::before{content:"";position:absolute;left:0;right:0;top:48%;height:5vh;
+ background:repeating-conic-gradient(#d9d3c2 0 25%,#1b2530 0 50%) 0 0/5vh 5vh;opacity:.35}
+.page::after{content:"";position:absolute;left:-30%;right:-30%;bottom:0;height:30vh;
+ background:repeating-conic-gradient(#cfc8b6 0 25%,#151c24 0 50%) 0 0/9vh 9vh;
+ transform:perspective(40vh) rotateX(55deg);transform-origin:bottom;opacity:.55;
+ -webkit-mask:linear-gradient(transparent,#000 60%);mask:linear-gradient(transparent,#000 60%)}
+.page>*{position:relative;z-index:1}
+h1{font-size:clamp(18px,5.4vw,40px);line-height:1.5;color:var(--cream);text-shadow:3px 3px 0 #000;animation:glitch 7s steps(1) infinite}
+h2{font-size:clamp(12px,3.4vw,22px);line-height:1.7;color:var(--gold);text-shadow:2px 2px 0 #000}
+p,.sub{font-family:'VT323',monospace;font-size:clamp(19px,4.6vw,26px);line-height:1.15}
+.btn{font:inherit;font-size:clamp(11px,3vw,16px);padding:1.4em 2.2em;border:3px solid var(--cream);background:#0008;color:var(--cream);border-radius:40px;cursor:pointer;transition:.15s}
+.btn:hover,.btn:focus-visible{background:var(--cream);color:var(--ink);transform:scale(1.06);outline:none}
+.next{position:absolute!important;right:4vw;bottom:5vh;z-index:5}
+.back{position:absolute!important;left:4vw;bottom:5vh;z-index:5;padding:1.4em 1.6em}
+
+/* ---------- cuenta regresiva ---------- */
+#count{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#14100e,#050706 75%)}
+#count.on{display:flex}
+#count b{font-size:min(46vw,46vh);color:var(--cream);text-shadow:6px 6px 0 #000;animation:cnt .95s ease-out both}
+
+/* ---------- elegir personaje ---------- */
+.row{display:flex;gap:2vw;justify-content:center;align-items:flex-end;width:100%}
+.pick{background:none;border:0;cursor:pointer;color:var(--cream);font:inherit;font-size:clamp(8px,2.2vw,12px);display:flex;flex-direction:column;align-items:center;gap:1vh;width:22vw;max-width:230px}
+.pick img{width:100%;aspect-ratio:1;object-fit:contain;transition:.2s;filter:drop-shadow(0 6px 0 #0006)}
+.pick:hover img,.pick:focus-visible img{transform:translateY(-1.5vh) scale(1.08) rotate(-3deg)}
+.pick.done{opacity:.55}.pick.done span::after{content:" ✓"}
+
+/* ---------- cumpleaños ---------- */
+#p2{justify-content:flex-start;padding-top:11vh}
+.cumple{max-width:50vw;max-height:46vh;object-fit:contain;filter:drop-shadow(0 8px 10px #000a)}
+.grp{position:absolute!important;inset:0;z-index:2!important;pointer-events:none;overflow:hidden}
+.g{position:absolute;display:flex;align-items:flex-end;filter:drop-shadow(0 8px 6px #000a);animation:sway 4s ease-in-out infinite alternate}
+.g img{height:100%;width:auto;display:block;object-fit:contain}
+.g1{left:1%;bottom:5vh;height:78vh;rotate:4deg}
+.g2{left:21%;bottom:3vh;height:39vh;rotate:-5deg;animation-delay:-1.3s}
+.g3{right:0;transform:translateX(16%);bottom:9vh;height:78vh;rotate:-8deg;animation-delay:-2.2s}
+
+/* ---------- mensajes (peluche 1) ---------- */
+.msgs{display:grid;grid-template-columns:1fr minmax(30vw,400px) 1fr;gap:2vw;align-items:center;width:100%;max-width:1100px}
+.col{display:flex;flex-direction:column;gap:1.6vh}
+.pill{background:var(--paper);color:#22303c;font-family:'VT323',monospace;font-size:clamp(17px,4.2vw,24px);padding:1.2vh 2vw;border-radius:30px;border:3px solid #0008;text-align:center;opacity:0;transform:scale(.6)}
+.pill.show{opacity:1;transform:scale(1);transition:.35s cubic-bezier(.3,1.6,.5,1)}
+.mid{position:absolute!important;left:50%;bottom:5vh;height:76vh;translate:-50% 0;display:flex;align-items:flex-end;justify-content:center;transform-origin:50% 100%;z-index:2;pointer-events:none}
+.mid img{width:auto;height:100%;max-width:50vw;filter:drop-shadow(0 10px 8px #000c)}
+.mid.in{animation:grow 1.4s ease-out 1}
+
+/* ---------- cartas, playlist (peluches 2 y 4) ---------- */
+.card{background:var(--paper);color:#22303c;border-radius:18px;padding:3vh 4vw;max-width:680px;max-height:48vh;overflow:auto;border:4px solid #0008}
+.card p{font-size:clamp(18px,4.3vw,25px)}
+.player{background:#2a1a12cc;border:3px solid #0008;border-radius:16px;padding:2vh 3vw;width:100%;max-width:560px;text-align:left;display:flex;flex-direction:column;gap:1vh}
+.song{display:flex;gap:2vw;align-items:center;background:none;border:0;color:var(--cream);font-family:'VT323',monospace;font-size:clamp(18px,4.4vw,24px);padding:.6vh 1vw;cursor:pointer;text-align:left;border-radius:8px}
+.song:hover,.song.play{background:#ffffff1f}
+.song small{opacity:.7;font-size:.8em}
+iframe{width:100%;max-width:560px;height:min(352px,44vh);border:0;border-radius:12px}
+.duo{display:flex;gap:3vw;align-items:flex-start;justify-content:center;width:100%;max-width:1560px}
+.duo .player,.duo .card{flex:1;max-width:none;min-width:0}
+.duo iframe{flex:0 0 min(30vw,540px);max-width:none;height:min(400px,48vh)}
+.trio{display:flex;gap:2.5vw;align-items:center;justify-content:center;width:100%;max-width:1300px}
+.trio .card{flex:1;min-width:0;max-width:none;max-height:44vh}
+.slot{flex:0 0 min(34vw,430px)}
+.duo .slot{flex-basis:min(26vw,480px)}
+#p4 h2{z-index:6}
+.stand,.sit{position:absolute!important;left:50%;bottom:2vh;translate:-50% 0;z-index:5!important;filter:drop-shadow(0 10px 8px #000c);pointer-events:none}
+.stand{height:var(--h,72vh)}
+.sit{height:46vh}
+.stand img,.sit img{height:100%;width:auto;display:block;object-fit:contain;object-position:50% 100%}
+.stand img{max-width:40vw}
+.sit img{max-width:38vw}
+.stand::after,.sit::after,.mid::after{content:"";position:absolute;left:6%;right:6%;bottom:-2%;height:8%;background:radial-gradient(ellipse,#000c,transparent 70%);z-index:-1}
+
+/* ---------- fotos (peluche 3) ---------- */
+.wall{position:relative;width:min(96vw,940px);height:min(58vh,72vw)}
+.pol{position:absolute;width:24%;aspect-ratio:3/4;background:var(--orange);box-shadow:4px 6px 0 #0007;transition:.25s;rotate:var(--r)}
+.pol:hover{scale:1.15;rotate:0deg;z-index:9}
+.pol img,.pol .ph{position:absolute;left:2.5%;top:2.5%;width:95%;height:88%;object-fit:cover;background:#22303c;display:flex;align-items:center;justify-content:center;font-size:30px}
+.face{position:absolute;width:15%;aspect-ratio:1;z-index:6;rotate:var(--r);filter:drop-shadow(3px 5px 4px #000c)}
+.face img{width:100%;height:100%;object-fit:contain}
+
+/* ---------- pantalla final ---------- */
+.mascot{width:min(50vw,320px);animation:bob 2.4s ease-in-out infinite}
+.mascot img{width:100%;aspect-ratio:1;object-fit:contain}
+
+/* ---------- decorado de fondo ---------- */
+.decor{position:absolute!important;inset:0;z-index:0!important;overflow:hidden;pointer-events:none}
+.decor .d{position:absolute;opacity:.85}
+.decor svg{width:100%;height:auto;display:block;overflow:visible}
+.sw{transform-origin:20% 10%;animation:camsw 7s ease-in-out infinite alternate}
+.led{animation:led 1.4s steps(1) infinite}
+.plate{font:clamp(8px,1.6vw,12px) 'Press Start 2P',monospace;color:#1a170c;background:#9c8a3c;padding:.9em 1.2em;border:3px solid #1a170c;box-shadow:inset 0 0 0 2px #b9a44a55,3px 4px 0 #0008;text-align:center;white-space:nowrap}
+
+/* ---------- siluetas: ojos iluminados fijos (sin parpadeo) ---------- */
+.fl{position:absolute!important;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.sil{position:absolute;isolation:isolate;height:var(--h);filter:drop-shadow(0 10px 8px #000c)}
+.sil img{display:block;height:100%;width:auto}
+.sil img.gl{position:absolute;left:0;top:0}
+.gl{mix-blend-mode:screen;filter:brightness(.92) contrast(14) blur(2.5px)}
+.ventw{position:relative;isolation:isolate;background:#050605;aspect-ratio:4/3}
+.ventw img{position:absolute;left:6%;top:6%;width:88%;height:88%;object-fit:cover;filter:brightness(.9)}
+.ventw svg{position:relative;display:block;width:100%;height:100%}
+.gatew{position:relative;isolation:isolate}
+.gatew img{position:absolute;left:5%;top:47%;width:90%;height:51%;object-fit:contain;object-position:50% 100%}
+.ventw img.gl,.gatew img.gl{filter:brightness(.92) contrast(14) blur(2.5px)}
+
+/* ---------- cámara de vigilancia / baja fidelidad ---------- */
+body::before{content:"";position:fixed;inset:0;z-index:50;pointer-events:none;opacity:.16;mix-blend-mode:overlay;
+ background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+ animation:grain .5s steps(1) infinite}
+body::after{content:"";position:fixed;inset:0;z-index:51;pointer-events:none;
+ background:repeating-linear-gradient(transparent 0 2px,#0005 3px),radial-gradient(ellipse at center,transparent 45%,#000d 100%)}
+#hud{position:fixed;left:4vw;right:4vw;top:2.5vh;z-index:52;display:flex;justify-content:space-between;font:clamp(16px,3.6vw,22px) 'VT323',monospace;color:#d8d3b4;text-shadow:0 0 6px #0008;pointer-events:none}
+#hud b{color:#b3382c;animation:rec 1.2s steps(1) infinite}
+
+/* ---------- animaciones ---------- */
+@keyframes in{from{opacity:0}to{opacity:1}}
+@keyframes flick{0%,100%{opacity:1}91%{opacity:1}92%{opacity:.78}93%{opacity:1}96%{opacity:.9}97%{opacity:1}}
+@keyframes grain{0%{background-position:0 0}25%{background-position:-40px 30px}50%{background-position:30px -50px}75%{background-position:-20px -30px}}
+@keyframes rec{50%{opacity:0}}
+@keyframes glitch{0%,95%,100%{text-shadow:3px 3px 0 #000}96%{text-shadow:-4px 0 #8a2a2a,4px 0 #2a6a6a}98%{text-shadow:4px 0 #8a2a2a,-4px 0 #2a6a6a;transform:translateX(3px)}}
+@keyframes cnt{0%{transform:scale(1.5);opacity:0;filter:blur(6px)}25%{opacity:1;filter:none}100%{transform:scale(.92);opacity:.5}}
+@keyframes bob{50%{transform:translateY(-1.2vh) rotate(2deg)}}
+@keyframes sway{to{translate:0 -.8vh;scale:1.02}}
+@keyframes grow{0%{scale:.82}45%{scale:1.07}100%{scale:1}}
+@keyframes camsw{from{rotate:-14deg}to{rotate:12deg}}
+@keyframes led{50%{opacity:.15}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+
+/* ---------- celular ---------- */
+@media(max-width:700px){
+ .duo{flex-direction:column;align-items:center}.duo .card{max-height:24vh}.duo iframe{flex:none;width:100%;height:min(352px,34vh)}
+ .trio{flex-direction:column}.trio .card{max-height:20vh}
+ .slot{display:none}
+ .wall{height:min(58vh,92vw)}.pol{width:29%}
+ .sit{height:34vh}.sit img{max-width:52vw}
+ .stand{height:38vh;left:4vw;translate:0 0}.stand img{max-width:40vw}
+ .g1,.g3{height:46vh}.g2{height:23vh;left:22%}
+ .cumple{max-width:92vw}
+ .sil{height:calc(var(--h)*.62)}
+}
+@media(max-width:560px){
+ .pick{width:23vw}
+ .pill{font-size:15px;padding:.8vh 1.2vw;border-width:2px}
+ .msgs{grid-template-columns:1fr 38vw 1fr}
+ .mid{height:58vh}.mid img{max-width:42vw}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><radialGradient id="sh" cx=".32" cy=".28" r=".95"><stop offset="0" stop-color="#fff" stop-opacity=".30"/><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".62"/></radialGradient></defs></svg>
+<div id="hud"><span><b>● REC</b> &nbsp;CAM <span id="cam">01</span></span><span id="ts">00:00:00</span></div>
+<div id="count"><b>3</b></div>
+
+<!-- 0 inicio -->
+<section class="page on" id="p0">
+  <h1>Hola mi amor</h1>
+  <p class="sub">¿Quieres ver tu sorpresa?</p>
+  <button class="btn" onclick="countdown()">Sí</button>
+</section>
+<!-- 1 elegir -->
+<section class="page" id="p1">
+  <h1>Sorpresa mi amor</h1>
+  <p class="sub">Abre cada uno, uno por uno</p>
+  <div class="row" id="picks"></div>
+  <button class="btn next" id="c1" style="display:none" onclick="go(7)">Continuar</button>
+</section>
+<!-- 2 cumpleaños -->
+<section class="page" id="p2">
+  <img class="cumple" id="cumpleImg" alt="">
+  <div class="grp" id="grp"></div>
+  <button class="btn next" onclick="go(1)">Continuar</button>
+</section>
+<!-- 3 todo esto es para ti -->
+<section class="page" id="p3">
+  <h1 id="t3" class="ty"></h1>
+  <div class="msgs"><div class="col" id="mL"></div><div></div><div class="col" id="mR"></div></div>
+  <div class="mid" id="mMid"></div>
+  <button class="btn next" onclick="go(1)">Volver</button>
+</section>
+<!-- 4 te dedico esto -->
+<section class="page" id="p4">
+  <h2 class="ty">Te dedico esto</h2>
+  <div class="trio"><div class="card" id="dedic"></div><div class="slot"></div><div class="card" id="dedicB"></div></div>
+  <div class="stand" id="standDedica" style="--h:82vh"></div>
+  <button class="btn next" onclick="go(1)">Volver</button>
+</section>
+<!-- 5 playlist -->
+<section class="page" id="p5">
+  <h2 class="ty">Nuestra playlist</h2>
+  <div class="duo"><div class="player" id="player"></div><div class="slot"></div><div class="card" id="dedic2"></div></div>
+  <div class="stand" id="standPlay"></div>
+  <audio id="au"></audio>
+  <button class="btn next" onclick="go(1)">Volver</button>
+</section>
+<!-- 6 fotos -->
+<section class="page" id="p6">
+  <h2 class="ty">Nuestras fotos</h2>
+  <div class="wall" id="wall"></div>
+  <div class="sit" id="sit"></div>
+  <button class="btn next" onclick="go(1)">Volver</button>
+</section>
+<!-- 7 final -->
+<section class="page" id="p7">
+  <div class="mascot" id="end"></div>
+  <h1 id="fin"></h1>
+  <button class="btn" onclick="go(0)">Verla otra vez</button>
+</section>
+
+<script>
+/* ============ EDITA AQUÍ (imágenes y sonidos en la misma carpeta que este archivo) ============ */
+const CONFIG = {
+  cumpleImg: "logo.png",          // imagen de la pantalla de cumpleaños (la de arriba)
+  grupo: [{img:"culero.png"},{img:"cerote.png"},{img:"cabal.png"}],   // cumpleaños: 1 alto izquierda | 2 pequeño | 3 asoma por la derecha
+  imgCentro: "frifro.png",        // peluche 1: personaje en medio de los mensajes
+  imgPlaylist: "foxeso.png",      // peluche 2: personaje de pie junto a la playlist
+  imgFotos: "sentao.png",         // peluche 3: personaje sentado en el suelo
+  rostros: ["ros1.png",""],       // peluche 3: rostros entre las fotos (el vacío no se muestra)
+  imgDedica: "sirSexo.png",       // peluche 4: personaje de pie entre los textos
+  silParado: "sil1.png",          // silueta de pie
+  silSentado: "sil2.png",         // silueta sentada
+  silRejilla: "sil3.png",         // silueta en rejillas y portones oscuros
+  sonidoBoton: "clic.mp3",       // sonido al presionar cualquier botón ("" para quitarlo)
+  volumenBoton: 0.6,              // 0 a 1
+  personajes: [
+    {nombre:"Personaje 1", img:"Bonnie.png"},
+    {nombre:"Personaje 2", img:"chica.png"},
+    {nombre:"Personaje 3", img:"Foxy.png"},
+    {nombre:"Personaje 4", img:"Fredy.png"}
+  ],
+  titulo_mensajes: "Todo esto es para ti, amor",
+  mensajes: [
+    "Te amo mucho","Te amo preciosa","Eres toda mi vida","Me encantas",
+    "Eres mi todo","Te mereces lo mejor","Me gustas demasiado","Eres la mejor",
+    "Eres mi razón de todo","Eres tan linda"
+  ],
+  dedicatoria: "Te dedico esta playlist porque cada canción me hace pensar en ti y en todo lo que siento cuando estamos juntos. Hay canciones que me recuerdan momentos, otras que simplemente tienen esa sensación que me transmites. Quise reunirlas todas aquí para que, cuando las escuches, puedas sentir aunque sea un poquito de todo el cariño que tengo por ti.",
+  dedicatoria2: "Gracias por cada momento a tu lado, por tu risa, por tu paciencia y por hacerme sentir que todo vale la pena. Hoy es tu día y quiero que sepas lo especial que eres para mí. Que este año venga lleno de cosas hermosas, y que yo pueda estar a tu lado para verlas contigo.",
+  canciones: [                    // src: archivo mp3 en la misma carpeta, ej: "cancion1.mp3"
+    {titulo:"Canción 1", artista:"Artista", src:""},
+    {titulo:"Canción 2", artista:"Artista", src:""},
+    {titulo:"Canción 3", artista:"Artista", src:""}
+  ],
+  spotify: "https://open.spotify.com/embed/playlist/29F9CMTmvxYBL1nF7N5Vl5",   // tu playlist de Spotify (reemplaza la lista de arriba; "" para usar tus mp3)
+  fotos: ["one.jpeg","two.jpeg","three.jpeg","four.jpeg","five.jpeg"],
+  final: "Feliz cumpleaños, te amo"
+};
+/* ============================================================================================== */
+
+const $=s=>document.querySelector(s);
+const img=(src,alt)=>src?`<img src="${src}" alt="${alt||''}" onerror="this.remove()">`:'';
+const pages=[...document.querySelectorAll('.page')];
+const REDUCED=matchMedia('(prefers-reduced-motion:reduce)').matches;
+let cur=0;
+
+/* ---------- texto letra por letra ---------- */
+function typeEl(el,speed,delay){
+  if(!el)return;
+  const full=el.dataset.full||(el.dataset.full=el.textContent);
+  clearInterval(el._t);clearTimeout(el._d);
+  if(REDUCED){el.textContent=full;return}
+  el.innerHTML='<span></span><span style="visibility:hidden"></span>';
+  const [a,b]=el.children;b.textContent=full;let k=0;
+  el._d=setTimeout(()=>{el._t=setInterval(()=>{k++;a.textContent=full.slice(0,k);b.textContent=full.slice(k);if(k>=full.length)clearInterval(el._t)},speed)},delay||0);
+}
+function startType(n){
+  if(n<3||n>6)return;
+  document.querySelectorAll(`#p${n} h1.ty,#p${n} h2.ty`).forEach(e=>typeEl(e,45,100));
+  document.querySelectorAll(`#p${n} .card .ty`).forEach(e=>typeEl(e,22,1100));
+}
+
+/* ---------- navegación ---------- */
+function go(n){
+  $('#cam').textContent=String(n+1).padStart(2,'0');
+  pages[cur].classList.remove('on');cur=n;pages[cur].classList.add('on');
+  if(n===3)revealPills(); if(n===6)layoutPhotos(); startType(n);
+  if(n!==5){$('#au').pause();document.querySelectorAll('.song.play').forEach(b=>b.classList.remove('play'))}
+}
+function countdown(){
+  const c=$('#count'),b=c.querySelector('b');c.classList.add('on');let n=3;
+  (function t(){
+    if(n===0){c.classList.remove('on');go(2);return}
+    b.textContent=n;b.style.animation='none';void b.offsetWidth;b.style.animation='';n--;setTimeout(t,950);
+  })();
+}
+
+/* ---------- sonido al presionar botones ---------- */
+const clk=CONFIG.sonidoBoton?new Audio(CONFIG.sonidoBoton):null;
+document.addEventListener('click',e=>{
+  if(!clk||!e.target.closest('button')||e.target.closest('.song'))return;
+  const a=clk.cloneNode();a.volume=CONFIG.volumenBoton;
+  const p=a.play();if(p)p.catch(()=>{});
+});
+
+/* ---------- construir pantallas ---------- */
+setInterval(()=>{$('#ts').textContent=new Date().toLocaleTimeString('es',{hour12:false})},1000);
+$('#picks').innerHTML=CONFIG.personajes.map((p,i)=>`<button class="pick" data-i="${i}">${img(p.img,p.nombre)}<span>${p.nombre}</span></button>`).join('');
+const opened=new Set();
+const SECCION=[3,5,6,4]; // personaje 1: mensajes | 2: playlist + carta | 3: fotos | 4: te dedico esto
+document.querySelectorAll('.pick').forEach(b=>b.onclick=()=>{
+  const i=+b.dataset.i;opened.add(i);b.classList.add('done');
+  $('#end').innerHTML=img(CONFIG.personajes[i].img,CONFIG.personajes[i].nombre);
+  if(opened.size>=CONFIG.personajes.length)$('#c1').style.display='';
+  go(SECCION[i]);
+});
+pages[2].insertAdjacentHTML('beforeend','<button class="btn back" aria-label="Atrás" onclick="go(0)">‹</button>');
+
+/* cumpleaños */
+const ci=$('#cumpleImg');
+if(CONFIG.cumpleImg){ci.src=CONFIG.cumpleImg;ci.onerror=()=>ci.remove()}else ci.remove();
+$('#grp').innerHTML=CONFIG.grupo.slice(0,3).map((g,i)=>`<div class="g g${i+1}">${img(g.img)}</div>`).join('');
+
+/* mensajes */
+$('#t3').textContent=CONFIG.titulo_mensajes;
+const half=Math.ceil(CONFIG.mensajes.length/2);
+const pillsHTML=(arr,side)=>arr.map((m,j)=>`<div class="pill" data-o="${j*2+side}"><span class="pt">${m}</span></div>`).join('');
+$('#mL').innerHTML=pillsHTML(CONFIG.mensajes.slice(0,half),0);
+$('#mR').innerHTML=pillsHTML(CONFIG.mensajes.slice(half),1);
+$('#mMid').innerHTML=img(CONFIG.imgCentro);
+function revealPills(){
+  const mid=$('#mMid');mid.classList.remove('in');void mid.offsetWidth;mid.classList.add('in');
+  document.querySelectorAll('.pill').forEach(p=>{
+    p.classList.remove('show');const d=900+(+p.dataset.o)*330;
+    typeEl(p.querySelector('.pt'),24,d);
+    setTimeout(()=>p.classList.add('show'),d);
+  });
+}
+
+/* cartas y personajes de pie */
+$('#dedic').innerHTML=$('#dedic2').innerHTML=`<p class="ty">${CONFIG.dedicatoria}</p>`;
+$('#dedicB').innerHTML=`<p class="ty">${CONFIG.dedicatoria2}</p>`;
+$('#standDedica').innerHTML=img(CONFIG.imgDedica);
+$('#standPlay').innerHTML=img(CONFIG.imgPlaylist);
+$('#sit').innerHTML=img(CONFIG.imgFotos);
+
+/* playlist */
+(function(){
+  const box=$('#player'),au=$('#au');
+  if(CONFIG.spotify){
+    const u=CONFIG.spotify.includes('/embed/')?CONFIG.spotify:CONFIG.spotify.replace('open.spotify.com/','open.spotify.com/embed/');
+    box.insertAdjacentHTML('afterend',`<iframe src="${u}" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>`);box.remove();return;
+  }
+  box.innerHTML=CONFIG.canciones.map((c,i)=>`<button class="song" data-i="${i}">▶ <span>${c.titulo}<br><small>${c.artista}</small></span></button>`).join('');
+  box.querySelectorAll('.song').forEach(b=>b.onclick=()=>{
+    const c=CONFIG.canciones[+b.dataset.i];if(!c.src)return;
+    box.querySelectorAll('.song').forEach(x=>x.classList.remove('play'));
+    b.classList.add('play');au.src=c.src;au.play().catch(()=>{});
+  });
+})();
+
+/* fotos */
+function layoutPhotos(){
+  const w=$('#wall');if(w.dataset.done)return;w.dataset.done=1;
+  const P=[[10,2,-6],[12,47,5],[67,0,6],[64,48,-5],[38.5,0,-2]];   // [izq%, arriba%, rotación]
+  const F=[[29,30,-6],[58,32,7],[7,76,5],[80,76,-5]];
+  w.innerHTML=CONFIG.fotos.slice(0,5).map((f,i)=>{const [x,y,r]=P[i];
+    return `<div class="pol" style="left:${x}%;top:${y}%;--r:${r}deg"><img src="${f}" alt="" onerror="this.outerHTML='<div class=ph>💖</div>'"></div>`}).join('')
+  +CONFIG.rostros.slice(0,4).map((f,i)=>{const [x,y,r]=F[i];
+    return f?`<div class="face" style="left:${x}%;top:${y}%;--r:${r}deg">${img(f)}</div>`:''}).join('');
+}
+$('#fin').innerHTML=CONFIG.final;
+
+/* ---------- decorado de fondo (dibujado) ---------- */
+const CAMSVG=`<svg viewBox="0 0 120 90"><rect x="0" y="0" width="38" height="12" fill="#25251f"/><path d="M19 12 L48 40" stroke="#2c2c25" stroke-width="7"/><rect x="36" y="34" width="76" height="34" rx="6" fill="#3b3b32"/><rect x="36" y="34" width="76" height="34" rx="6" fill="url(#sh)"/><rect x="40" y="38" width="26" height="26" rx="13" fill="#0b0b0a"/><circle cx="53" cy="51" r="9" fill="#14181a"/><circle cx="53" cy="51" r="4" fill="#243038"/><circle cx="50" cy="48" r="1.6" fill="#8aa" opacity=".6"/><rect x="70" y="40" width="36" height="6" fill="#2a2a24"/><circle class="led" cx="104" cy="42" r="3" fill="#c0392b"/></svg>`;
+const HAZ=`<svg viewBox="0 0 100 90"><path d="M50 4 L97 86 H3Z" fill="#a8923a" stroke="#1a170c" stroke-width="5" stroke-linejoin="round"/><path d="M50 18 L86 80 H14Z" fill="none" stroke="#1a170c" stroke-width="2"/><rect x="46" y="36" width="8" height="28" rx="2" fill="#1a170c"/><circle cx="50" cy="72" r="4.5" fill="#1a170c"/><path d="M20 70 l8 -3 M70 40 l9 14" stroke="#6a5a20" stroke-width="1.4"/></svg>`;
+const GATE=`<svg viewBox="0 0 140 120"><rect x="2" y="2" width="136" height="116" fill="#0a0c0b" stroke="#2c2c26" stroke-width="4"/>${[0,1,2,3,4,5].map(i=>`<rect x="6" y="${6+i*7}" width="128" height="5.2" fill="#4b4b42"/>`).join('')}<rect x="4" y="50" width="132" height="6" fill="#6a6a60"/></svg>`;
+const VENT=`<svg viewBox="0 0 80 60"><rect x="2" y="2" width="76" height="56" fill="none" stroke="#3a3a32" stroke-width="3"/>${[0,1,2,3,4].map(i=>`<rect x="5" y="${8+i*10}" width="70" height="5" fill="#0a0a09"/>`).join('')}<circle cx="6" cy="6" r="2" fill="#555"/><circle cx="74" cy="6" r="2" fill="#555"/><circle cx="6" cy="54" r="2" fill="#555"/><circle cx="74" cy="54" r="2" fill="#555"/></svg>`;
+const EYES=c=>`<svg viewBox="0 0 60 24"><ellipse cx="14" cy="12" rx="10" ry="6" fill="${c}"/><ellipse cx="46" cy="12" rx="10" ry="6" fill="${c}"/><circle cx="15" cy="12" r="2.6" fill="#050505"/><circle cx="45" cy="12" r="2.6" fill="#050505"/></svg>`;
+const FLAGS=(()=>{let o='<svg viewBox="0 0 400 70" preserveAspectRatio="none" style="height:100%"><path d="M0 6 Q200 44 400 6" stroke="#2b2820" stroke-width="2" fill="none"/>';
+  const col=['#6a3a30','#a8944a','#46605a','#7a7a70'];
+  for(let i=0;i<12;i++){if(i===7)continue;const t=(i+.5)/12,x=400*t,y=6+76*t*(1-t);
+    o+=`<path d="M${x-13} ${y} L${x+13} ${y} L${x+(i%3-1)*3} ${y+28}Z" fill="${col[i%4]}" opacity=".8"/>`}
+  return o+'</svg>'})();
+/* cada silueta lleva una 2ª copia (.gl) que deja solo lo más brillante (los ojos) y lo difumina: ojos iluminados fijos */
+const silImgs=src=>src?`<img src="${src}" alt="" onerror="this.remove()"><img class="gl" src="${src}" alt="" aria-hidden="true" onerror="this.remove()">`:'';
+const D=(h,st)=>`<div class="d" style="${st}">${h}</div>`;
+const CAMD=st=>D(`<div class="sw">${CAMSVG}</div>`,st);
+const PLATE=(t,st)=>D(`<div class="plate">${t}</div>`,st);
+const HAZD=st=>D(HAZ,st);
+const EYED=(c,st)=>D(EYES(c),st+`;filter:drop-shadow(0 0 7px ${c})`);
+const VENTX=st=>D(`<div class="ventw">${silImgs(CONFIG.silRejilla)}${VENT}</div>`,st);
+const GATEX=st=>D(`<div class="gatew">${GATE}${silImgs(CONFIG.silRejilla)}</div>`,st);
+const DEC={
+  p0:[D(FLAGS,'left:0;right:0;top:3%;height:9vh'),CAMD('left:2%;top:12%;width:min(16vw,100px);rotate:-5deg'),CAMD('right:2%;top:12%;width:min(16vw,100px);scale:-1 1;rotate:5deg'),HAZD('left:4%;bottom:30vh;width:min(12vw,74px);rotate:-6deg'),PLATE('NO PASAR','right:4%;top:44%;rotate:5deg'),GATEX('right:1%;bottom:25vh;width:min(22vw,160px)'),EYED('#b3382c','left:8%;top:36%;width:min(8vw,52px);opacity:.6'),EYED('#e8e8d8','left:72%;top:26%;width:min(8vw,52px);opacity:.55')],
+  p1:[VENTX('left:2%;top:24%;width:min(15vw,150px)'),CAMD('left:2%;top:7%;width:min(18vw,110px);rotate:-6deg'),CAMD('right:2%;top:7%;width:min(18vw,110px);scale:-1 1;rotate:6deg'),PLATE('PELIGRO','left:3%;top:40%;rotate:-8deg'),HAZD('right:4%;top:38%;width:min(14vw,84px);rotate:7deg'),EYED('#e8e8d8','left:43%;top:20%;width:min(10vw,64px);opacity:.55'),EYED('#b3382c','left:62%;top:30%;width:min(7vw,46px);opacity:.5')],
+  p2:[D(FLAGS,'left:0;right:0;top:3%;height:9vh'),CAMD('left:2%;top:12%;width:min(16vw,100px);rotate:-5deg'),CAMD('right:2%;top:12%;width:min(16vw,100px);scale:-1 1;rotate:5deg'),PLATE('PELIGRO','left:3%;top:30%;rotate:-7deg'),HAZD('right:4%;top:32%;width:min(12vw,74px);rotate:7deg'),EYED('#b3382c','left:12%;top:22%;width:min(8vw,52px);opacity:.55'),EYED('#e8e8d8','left:76%;top:21%;width:min(8vw,52px);opacity:.5')],
+  p3:[VENTX('left:3%;top:14%;width:min(15vw,150px)'),D(FLAGS,'left:0;right:0;top:3%;height:9vh'),CAMD('right:2%;top:12%;width:min(16vw,100px);scale:-1 1'),HAZD('left:3%;bottom:30vh;width:min(13vw,80px);rotate:-6deg'),EYED('#e8e8d8','left:1%;top:36%;width:min(9vw,56px);opacity:.6'),PLATE('NO PASAR','right:3%;bottom:31vh;rotate:5deg')],
+  p4:[VENTX('left:3%;top:30%;width:min(14vw,140px)'),CAMD('left:2%;top:10%;width:min(16vw,100px);rotate:-5deg'),PLATE('SOLO PERSONAL','right:3%;top:12%;rotate:4deg'),GATEX('right:-1%;bottom:24vh;width:min(24vw,180px)'),EYED('#b3382c','left:4%;bottom:34vh;width:min(8vw,52px);opacity:.6')],
+  p5:[D(FLAGS,'left:0;right:0;top:3%;height:9vh'),VENTX('left:2%;top:14%;width:min(16vw,150px)'),CAMD('right:2%;top:12%;width:min(16vw,100px);scale:-1 1'),EYED('#b3382c','right:3%;bottom:30vh;width:min(8vw,52px);opacity:.6'),HAZD('left:3%;bottom:30vh;width:min(12vw,74px);rotate:6deg')],
+  p6:[VENTX('left:3%;top:30%;width:min(14vw,140px)'),CAMD('left:2%;top:9%;width:min(16vw,100px);rotate:-5deg'),CAMD('right:2%;top:9%;width:min(16vw,100px);scale:-1 1;rotate:5deg'),PLATE('FUERA DE SERVICIO','left:3%;bottom:30vh;rotate:-5deg'),GATEX('right:0;bottom:25vh;width:min(20vw,150px)'),EYED('#e8e8d8','left:44%;bottom:29vh;width:min(8vw,50px);opacity:.5')]
+};
+Object.entries(DEC).forEach(([id,items])=>{const el=document.createElement('div');el.className='decor';el.innerHTML=items.join('');$('#'+id).prepend(el)});
+
+/* ---------- siluetas en el suelo ---------- */
+const SILF=(src,st)=>src?`<div class="sil" style="${st}"><img src="${src}" alt="" onerror="this.parentNode.remove()"><img class="gl" src="${src}" alt="" aria-hidden="true"></div>`:'';
+const FL={
+  p0:[SILF(CONFIG.silParado,'left:7%;bottom:2vh;--h:76vh'),SILF(CONFIG.silSentado,'right:11%;bottom:2vh;--h:46vh')],
+  p1:[SILF(CONFIG.silSentado,'left:4%;bottom:2vh;--h:46vh'),SILF(CONFIG.silParado,'right:3%;bottom:2vh;--h:76vh')],
+  p3:[SILF(CONFIG.silSentado,'left:1%;bottom:2vh;--h:46vh')],
+  p7:[SILF(CONFIG.silSentado,'left:10%;bottom:2vh;--h:46vh'),SILF(CONFIG.silParado,'right:9%;bottom:2vh;--h:76vh')]
+};
+Object.entries(FL).forEach(([id,items])=>{const el=document.createElement('div');el.className='fl';el.innerHTML=items.join('');$('#'+id).prepend(el)});
+</script>
+</body>
+</html>
